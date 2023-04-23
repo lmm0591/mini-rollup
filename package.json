@@ -1,0 +1,24 @@
+{
+  "name": "mini-rollup",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tsc && mocha"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/chai": "^4.3.4",
+    "@types/escodegen": "^0.0.7",
+    "@types/node": "^18.16.0",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "acorn": "^8.8.2",
+    "escodegen": "^2.0.0"
+  }
+}
