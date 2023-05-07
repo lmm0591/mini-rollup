@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tsc && mocha"
+    "dev": "tsc --watch",
+    "test": "mocha --watch"
   },
   "keywords": [],
   "author": "",
@@ -12,13 +13,16 @@
   "devDependencies": {
     "@types/chai": "^4.3.4",
     "@types/escodegen": "^0.0.7",
+    "@types/estree": "^1.0.1",
     "@types/node": "^18.16.0",
+    "acorn": "^8.8.2",
     "chai": "^4.3.7",
+    "magic-string": "^0.30.0",
     "mocha": "^10.2.0",
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "acorn": "^8.8.2",
-    "escodegen": "^2.0.0"
+    "escodegen": "^2.0.0",
+    "estree-walker": "^3.0.3"
   }
 }

@@ -1,6 +1,41 @@
-import { Bundle } from './Bundle';
+import { readFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import * as acorn from 'acorn';
+import MagicString from 'magic-string';
 
-export function rollup(entryFile: string): Promise<Bundle> {
-  const bundle = new Bundle({ entry: entryFile });
-  return bundle.build().then(() => bundle);
+export interface GenericEsTreeNode extends acorn.Node {
+  [key: string]: any;
+}
+
+function parseImportNode(esTreeNode: GenericEsTreeNode): any {
+  for (const [key, value] of Object.entries(esTreeNode)) {
+    if (key === 'type' && value === 'ImportDeclaration') {
+      return esTreeNode;
+    } else if (Array.isArray(value)) {
+      for (const child of value) {
+        return parseImportNode(child as GenericEsTreeNode);
+      }
+    }
+  }
+}
+
+export function rollup(entryFile: string) {
+  return {
+    generate: async () => {
+      let code = await readFile(entryFile, 'utf-8');
+      const ast = acorn.parse(code, { ecmaVersion: 'latest', sourceType: 'module' });
+      const importDeclaration = parseImportNode(ast);
+      let dependentCode = '';
+      if (importDeclaration) {
+        const magicString = new MagicString(code);
+        magicString.remove(importDeclaration.start, importDeclaration.end);
+        code = magicString.toString();
+        dependentCode = await readFile(resolve(dirname(entryFile), importDeclaration.source.value + '.js'), 'utf-8');
+      }
+
+      return {
+        code: dependentCode + code,
+      };
+    },
+  };
 }
