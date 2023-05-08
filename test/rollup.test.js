@@ -5,6 +5,10 @@ const fooCode = `export default function foo() {
   return 42;
 }
 `;
+const rawMainCode = `import foo from './foo';
+console.log(foo());
+`;
+
 const mainCode = `export default function foo() {
   return 42;
 }
@@ -32,6 +36,26 @@ describe('初始化 mini rollup', () => {
     const bundle = rollup('./test/samples/main.js');
     const { code } = await bundle.generate();
     expect(code).to.eql(mainCode);
+  });
+
+  it('当调用 generate 方法时，入口文件将被会解析到 Graph 的 entryModule 属性中', async () => {
+    const bundle = rollup('./test/samples/main.js');
+    const { graph } = await bundle.generate();
+
+    expect(graph.entryModule).to.contain({
+      id: './test/samples/main.js',
+      code: rawMainCode,
+    });
+  });
+
+  it('当调用 generate 方法时，entryModule 解析文件里的 Import 语句', async () => {
+    const bundle = rollup('./test/samples/main.js');
+    const { graph } = await bundle.generate();
+
+    expect(graph.entryModule.importDescriptions.get('foo')).to.contain({
+      name: 'default',
+      source: './foo',
+    });
   });
 
   it('当文件里的 import 语句时，将会被记录到 Graph 的依赖关系中', async () => {
