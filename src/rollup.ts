@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import * as acorn from 'acorn';
 import MagicString from 'magic-string';
+import { Graph } from './Graph';
+import { Module } from './Module';
 
 export interface GenericEsTreeNode extends acorn.Node {
   [key: string]: any;
@@ -25,15 +27,21 @@ export function rollup(entryFile: string) {
       let code = await readFile(entryFile, 'utf-8');
       const ast = acorn.parse(code, { ecmaVersion: 'latest', sourceType: 'module' });
       const importDeclaration = parseImportNode(ast);
+      const graph = new Graph();
+      graph.entryModule = new Module(entryFile);
       let dependentCode = '';
       if (importDeclaration) {
         const magicString = new MagicString(code);
         magicString.remove(importDeclaration.start, importDeclaration.end);
         code = magicString.toString();
-        dependentCode = await readFile(resolve(dirname(entryFile), importDeclaration.source.value + '.js'), 'utf-8');
+        const dependencyFileName = importDeclaration.source.value + '.js';
+        dependentCode = await readFile(resolve(dirname(entryFile), dependencyFileName), 'utf-8');
+        const dependencyModule = new Module(dependencyFileName);
+        dependencyModule.code = dependentCode;
+        graph.entryModule.dependencies.push(dependencyModule);
       }
-
       return {
+        graph,
         code: dependentCode + code,
       };
     },

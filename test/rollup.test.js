@@ -1,12 +1,14 @@
 const { expect } = require('chai');
 const { rollup } = require('../dist/rollup');
 
-const fooCode = `export default function foo () {
-	return 42;
-}`;
-const mainCode = `export default function foo () {
-	return 42;
+const fooCode = `export default function foo() {
+  return 42;
 }
+`;
+const mainCode = `export default function foo() {
+  return 42;
+}
+
 console.log(foo());
 `;
 
@@ -30,5 +32,15 @@ describe('初始化 mini rollup', () => {
     const bundle = rollup('./test/samples/main.js');
     const { code } = await bundle.generate();
     expect(code).to.eql(mainCode);
+  });
+
+  it('当文件里的 import 语句时，将会被记录到 Graph 的依赖关系中', async () => {
+    const bundle = rollup('./test/samples/main.js');
+    const { graph } = await bundle.generate();
+    expect(graph.entryModule.dependencies).length(1);
+    expect(graph.entryModule.dependencies[0]).to.contain({
+      id: './foo.js',
+      code: fooCode,
+    });
   });
 });

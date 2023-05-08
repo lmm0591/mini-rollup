@@ -40,6 +40,8 @@ const promises_1 = require("node:fs/promises");
 const node_path_1 = require("node:path");
 const acorn = __importStar(require("acorn"));
 const magic_string_1 = __importDefault(require("magic-string"));
+const Graph_1 = require("./Graph");
+const Module_1 = require("./Module");
 function parseImportNode(esTreeNode) {
     for (const [key, value] of Object.entries(esTreeNode)) {
         if (key === 'type' && value === 'ImportDeclaration') {
@@ -58,14 +60,21 @@ function rollup(entryFile) {
             let code = yield (0, promises_1.readFile)(entryFile, 'utf-8');
             const ast = acorn.parse(code, { ecmaVersion: 'latest', sourceType: 'module' });
             const importDeclaration = parseImportNode(ast);
+            const graph = new Graph_1.Graph();
+            graph.entryModule = new Module_1.Module(entryFile);
             let dependentCode = '';
             if (importDeclaration) {
                 const magicString = new magic_string_1.default(code);
                 magicString.remove(importDeclaration.start, importDeclaration.end);
                 code = magicString.toString();
-                dependentCode = yield (0, promises_1.readFile)((0, node_path_1.resolve)((0, node_path_1.dirname)(entryFile), importDeclaration.source.value + '.js'), 'utf-8');
+                const dependencyFileName = importDeclaration.source.value + '.js';
+                dependentCode = yield (0, promises_1.readFile)((0, node_path_1.resolve)((0, node_path_1.dirname)(entryFile), dependencyFileName), 'utf-8');
+                const dependencyModule = new Module_1.Module(dependencyFileName);
+                dependencyModule.code = dependentCode;
+                graph.entryModule.dependencies.push(dependencyModule);
             }
             return {
+                graph,
                 code: dependentCode + code,
             };
         }),
