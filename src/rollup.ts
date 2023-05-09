@@ -10,14 +10,14 @@ export function rollup(entryFile: string) {
       if (graph.entryModule.importStatements.size > 0) {
         const magicString = new MagicString(code);
         graph.entryModule.importStatements.forEach(({ start, end }) => {
-          magicString.remove(start, end);
+          magicString.remove(start, end + 1);
         });
         code = magicString.toString();
       }
-      const dependentCode = graph.entryModule.dependencies.map(({ code }) => code).join('\n');
+      const dependentCode = graph.entryModule.dependencies.map(({ code }) => code + '\n');
       return {
         graph,
-        code: dependentCode + code,
+        code: dependentCode.join('') + code,
       };
     },
   };

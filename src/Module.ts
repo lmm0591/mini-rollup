@@ -4,13 +4,13 @@ export interface GenericEsTreeNode extends acorn.Node {
   [key: string]: any;
 }
 
-function parseImportNode(esTreeNode: GenericEsTreeNode): any {
+function parseImportNode(esTreeNode: GenericEsTreeNode, importDeclarations: GenericEsTreeNode[]): any {
   for (const [key, value] of Object.entries(esTreeNode)) {
     if (key === 'type' && value === 'ImportDeclaration') {
-      return esTreeNode;
+      importDeclarations.push(esTreeNode);
     } else if (Array.isArray(value)) {
       for (const child of value) {
-        return parseImportNode(child as GenericEsTreeNode);
+        parseImportNode(child as GenericEsTreeNode, importDeclarations);
       }
     }
   }
@@ -41,10 +41,11 @@ export class Module {
   setSource(code: string) {
     this.code = code;
     const ast = acorn.parse(code, { ecmaVersion: 'latest', sourceType: 'module' });
-    const importDeclaration = parseImportNode(ast);
-    if (importDeclaration) {
+    const importDeclarations: GenericEsTreeNode[] = [];
+    parseImportNode(ast, importDeclarations);
+    importDeclarations.forEach((importDeclaration) => {
       this.addImport(importDeclaration);
-    }
+    });
   }
 
   private addImport(node: GenericEsTreeNode): void {
